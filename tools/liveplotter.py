@@ -9,8 +9,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import threading
 
-data_rate = 100
-plot_rate = 10
+data_rate = 1000
+plot_rate = 100
 num_samples = 1000
 
 my_odrive = odrive.core.find_any()
@@ -22,7 +22,7 @@ vals = []
 def fetch_data():
     global vals
     while True:
-        vals.append(my_odrive.motor0.encoder.pll_pos)
+        vals.append(my_odrive.pendulum_angle)
         if len(vals) > num_samples:
             vals = vals[-num_samples:]
         time.sleep(1/data_rate)
@@ -32,6 +32,7 @@ def plot_data():
     while True:
         plt.clf()
         plt.plot(vals)
+       
         plt.pause(1/plot_rate)
 
 fetch_thread = threading.Thread(target=fetch_data, daemon=True)

@@ -55,6 +55,7 @@
 #include "freertos_vars.h"
 #include "low_level.h"
 #include "axis_c_interface.h"
+#include "pendulum_controller.h"
 #include "commands.h"
 /* USER CODE END Includes */
 
@@ -67,7 +68,8 @@ osSemaphoreId sem_usb_irq;
 
 // List of threads
 osThreadId thread_motor_0;
-osThreadId thread_motor_1;
+//osThreadId thread_motor_1;
+osThreadId thread_pendulum_control;
 osThreadId thread_cmd_parse;
 /* USER CODE END Variables */
 
@@ -149,9 +151,12 @@ void StartDefaultTask(void const * argument)
 
   // Start motor threads
   osThreadDef(task_motor_0, axis_thread_entry,   osPriorityHigh+1, 0, 512);
-  osThreadDef(task_motor_1, axis_thread_entry,   osPriorityHigh,   0, 512);
+  //osThreadDef(task_motor_1, axis_thread_entry,   osPriorityHigh,   0, 512);
+  osThreadDef(task_pendulum_control, pendulum_controller_thread_entry,   osPriorityHigh,   0, 512);
+
   thread_motor_0 = osThreadCreate(osThread(task_motor_0), &motors[0]);
-  thread_motor_1 = osThreadCreate(osThread(task_motor_1), &motors[1]);
+  thread_pendulum_control = osThreadCreate(osThread(task_pendulum_control), NULL);
+  //thread_motor_1 = osThreadCreate(osThread(task_motor_1), &motors[1]);
 
   // Start command handling thread
   osThreadDef(task_cmd_parse, communication_task, osPriorityNormal, 0, 512);

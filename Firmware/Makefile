@@ -81,7 +81,8 @@ C_SOURCES = \
   Src/syscalls.c \
   MotorControl/utils.c \
   MotorControl/legacy_commands.c \
-  MotorControl/low_level.c
+  MotorControl/low_level.c \
+  PendulumControl/pendulum_controller.c
 CPP_SOURCES = \
   MotorControl/axis.cpp \
   MotorControl/commands.cpp \
@@ -121,6 +122,7 @@ C_INCLUDES += -IDrivers/CMSIS/Device/ST/STM32F4xx/Include
 C_INCLUDES += -IDrivers/CMSIS/Include
 C_INCLUDES += -IInc
 C_INCLUDES += -IMotorControl
+C_INCLUDES += -IPendulumControl
 # compile gcc flags
 ASFLAGS = -mthumb -mcpu=cortex-m4 -mfpu=fpv4-sp-d16 -mfloat-abi=hard $(AS_DEFS) $(AS_INCLUDES) $(OPT) -Wall -fdata-sections -ffunction-sections
 CFLAGS = -mthumb -mcpu=cortex-m4 -mfpu=fpv4-sp-d16 -mfloat-abi=hard $(C_DEFS) $(C_INCLUDES) $(OPT) -Wall -fdata-sections -ffunction-sections

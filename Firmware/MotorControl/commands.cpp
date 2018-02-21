@@ -8,6 +8,7 @@
 
 #include "commands.h"
 #include "low_level.h"
+#include "pendulum_controller.h"
 #include "protocol.hpp"
 #include "freertos_vars.h"
 #include "utils.h"
@@ -92,6 +93,7 @@ void motors_1_set_current_setpoint_func(void) {
 // TODO: Autogenerate this table. It will come up again very soon in the Arduino library.
 // clang-format off
 const Endpoint endpoints[] = {
+    Endpoint::make_property("pendulum_angle", &pendulum_encoder.pll_pos),
     Endpoint::make_property("vbus_voltage", const_cast<const float*>(&vbus_voltage)),
     Endpoint::make_property("elec_rad_per_enc", const_cast<const float*>(&elec_rad_per_enc)),
 	Endpoint::make_property("UUID_0", (const uint32_t*)(ID_UNIQUE_ADDRESS + 0*4)),
@@ -132,7 +134,7 @@ const Endpoint endpoints[] = {
             Endpoint::make_property("Ibus", const_cast<const float*>(&motors[0].current_control.Ibus)),
         Endpoint::close_tree(),
         Endpoint::make_object("gate_driver"),
-            Endpoint::make_property("drv_error", reinterpret_cast<int32_t*>(&motors[0].drv_fault)),
+            Endpoint::make_property("drv_fault", reinterpret_cast<int32_t*>(&motors[0].drv_fault)),
             Endpoint::make_property("status_reg_1", (&motors[0].gate_driver_regs.Stat_Reg_1_Value)),
             Endpoint::make_property("status_reg_2", (&motors[0].gate_driver_regs.Stat_Reg_2_Value)),
             Endpoint::make_property("ctrl_reg_1", (&motors[0].gate_driver_regs.Ctrl_Reg_1_Value)),
@@ -196,7 +198,7 @@ const Endpoint endpoints[] = {
             Endpoint::make_property("Ibus", const_cast<const float*>(&motors[1].current_control.Ibus)),
         Endpoint::close_tree(),
         Endpoint::make_object("gate_driver"),
-            Endpoint::make_property("drv_error", reinterpret_cast<int32_t*>(&motors[1].drv_fault)),
+            Endpoint::make_property("drv_fault", reinterpret_cast<int32_t*>(&motors[1].drv_fault)),
             Endpoint::make_property("status_reg_1", (&motors[1].gate_driver_regs.Stat_Reg_1_Value)),
             Endpoint::make_property("status_reg_2", (&motors[1].gate_driver_regs.Stat_Reg_2_Value)),
             Endpoint::make_property("ctrl_reg_1", (&motors[1].gate_driver_regs.Ctrl_Reg_1_Value)),

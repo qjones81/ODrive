@@ -34,7 +34,7 @@
 float vbus_voltage = 12.0f;
 
 // TODO stick parameter into struct
-#define ENCODER_CPR (2048 * 4) // Default resolution of CUI-AMT102 encoder
+#define ENCODER_CPR (1000 * 4) // Default resolution of CUI-AMT102 encoder
 #define POLE_PAIRS 7 // This value is correct for N5065 motors and Turnigy SK3 series.
 const float elec_rad_per_enc = POLE_PAIRS * 2 * M_PI * (1.0f / (float)ENCODER_CPR);
 
@@ -61,17 +61,17 @@ Motor_t motors[] = {
         .error = ERROR_NO_ERROR,
         .drv_fault = DRV8301_FaultType_NoFault,
         .pos_setpoint = 0.0f,
-        .pos_gain = 20.0f,  // [(counts/s) / counts]
+        .pos_gain = 40.0f,  // [(counts/s) / counts]
         .vel_setpoint = 0.0f,
         // .vel_setpoint = 800.0f, <sensorless example>
-        .vel_gain = 5.0f / 10000.0f,  // [A/(counts/s)]
+        .vel_gain = 7.5f / 10000.0f,  // [A/(counts/s)]
         // .vel_gain = 15.0f / 200.0f, // [A/(rad/s)] <sensorless example>
         .vel_integrator_gain = 10.0f / 10000.0f,  // [A/(counts/s * s)]
         // .vel_integrator_gain = 0.0f, // [A/(rad/s * s)] <sensorless example>
         .vel_integrator_current = 0.0f,  // [A]
-        .vel_limit = 20000.0f,           // [counts/s]
+        .vel_limit = 50000.0f,           // [counts/s]
         .current_setpoint = 0.0f,        // [A]
-        .calibration_current = 10.0f,    // [A]
+        .calibration_current = 20.0f,    // [A]
         .resistance_calib_max_voltage = 1.0f, // [V]
         .phase_inductance = 0.0f,        // to be set by measure_phase_inductance
         .phase_resistance = 0.0f,        // to be set by measure_phase_resistance
@@ -105,7 +105,7 @@ Motor_t motors[] = {
             // Read out max_allowed_current to see max supported value for current_lim.
             // You can change DRV8301_ShuntAmpGain to get a different range.
             // .current_lim = 75.0f, //[A]
-            .current_lim = 10.0f,  //[A]
+            .current_lim = 60.0f,  //[A]
             .p_gain = 0.0f,        // [V/A] should be auto set after resistance and inductance measurement
             .i_gain = 0.0f,        // [V/As] should be auto set after resistance and inductance measurement
             .v_current_control_integral_d = 0.0f,
@@ -1286,6 +1286,7 @@ bool check_DRV_fault(Motor_t* motor) {
 }
 
 void control_motor_loop(Motor_t* motor) {
+    motor->axis_legacy.control_loop_up = true;
     while (*(motor->axis_legacy.enable_control)) {
         if (osSignalWait(M_SIGNAL_PH_CURRENT_MEAS, PH_CURRENT_MEAS_TIMEOUT).status != osEventSignal) {
             motor->error = ERROR_FOC_MEASUREMENT_TIMEOUT;
@@ -1392,6 +1393,7 @@ void control_motor_loop(Motor_t* motor) {
     }
 
     //We are exiting control, reset Ibus, and update brake current
+    motor->axis_legacy.control_loop_up = false;
     motor->current_control.Ibus = 0.0f;
     update_brake_current();
 }
