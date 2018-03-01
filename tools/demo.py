@@ -29,13 +29,18 @@ print("Position setpoint is " + str(my_drive.motor0.pos_setpoint))
 # And this is how function calls are done:
 my_drive.motor0.set_pos_setpoint(0.0, 0.0, 0.0)
 
+my_drive.motor0.pos_gain = 20.0
+my_drive.motor0.vel_gain = 5.0/10000.0
+my_drive.motor0.vel_limit = 50000.0
+my_drive.motor0.current_control.current_lim = 20.0
+
 # A little sine wave to test
 t0 = time.monotonic()
 while True:
-    setpoint = 10000.0 * math.sin((time.monotonic() - t0)*2)
-    print("goto " + str(int(setpoint)))
+    setpoint = 20000.0 * math.sin((time.monotonic() - t0)*2)
+    #print("goto " + str(int(setpoint)))
     my_drive.motor0.set_pos_setpoint(setpoint, 0.0, 0.0)
-    time.sleep(0.01)
+    time.sleep(0.001)
 
 
 # Some more things you can try:

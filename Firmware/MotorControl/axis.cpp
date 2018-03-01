@@ -2,6 +2,7 @@
 #include "axis.h"
 #include <stdlib.h>
 #include "legacy_commands.h"
+#include <iostream>
 
 //TODO: goal of refactor is to kick this out completely
 extern "C" {
@@ -11,6 +12,7 @@ extern "C" {
 // C interface
 extern "C" {
 void axis_thread_entry(void const* temp_motor_ptr) {
+
     Motor_t* motor = (Motor_t*)temp_motor_ptr;
 
     //TODO: explicit axis number assignment

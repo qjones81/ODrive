@@ -19,6 +19,7 @@ status_reg_2 = my_drive.motor0.gate_driver.status_reg_2
 ctrl_reg_1 = my_drive.motor0.gate_driver.ctrl_reg_1
 ctrl_reg_2 = my_drive.motor0.gate_driver.ctrl_reg_2
 
+print("Error Code: " + str(my_drive.motor0.error))
 print("DRV Fault Code: " + str(fault))
 print("Status Reg 1: " + str(status_reg_1) + " (" + format(status_reg_1, '#010b') + ")")
 print("Status Reg 2: " + str(status_reg_2) + " (" + format(status_reg_2, '#010b') + ")")

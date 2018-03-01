@@ -3,11 +3,13 @@
 #include <stdlib.h>
 #include "low_level.h"
 #include "utils.h"
+#include "kalman.h"
 #include <tim.h>
-
 
 #define PENDULUM_ENCODER_CPR (600 * 4)
 static const float counts_per_rad = 2 * M_PI / PENDULUM_ENCODER_CPR;
+
+Encoder_t pendulum_encoder;
 void pendulum_controller_thread_entry() {
 
     // HAL_TIM_Encoder_Start(&htim4, TIM_CHANNEL_ALL);
@@ -15,6 +17,23 @@ void pendulum_controller_thread_entry() {
     // Zero Timer
     // pendulum_encoder.encoder_timer->Instance->CNT = 0;
 
+float pos_change = pos_setpoint - motor->encoder.pll_pos;
+if(fabs(pos_change) > 100)
+{
+    motor->vel_limit = 10000.0f;
+}
+else 
+{
+    motor->vel_limit = vel_feed_forward;
+}
+if (pos_setpoint < (motor->encoder.pll_pos - 100)) {
+        motor->vel_limit = 10000.0f};
+        else if (pos_setpoint > (motors[0].encoder.encoder_state + 100)) {
+        motor->vel_limit = 10000.0f};
+        else {
+        motor->vel_limit = vel_feed_forward
+        };
+}
     //Setup pendulum encoder
     pendulum_encoder.use_index = false;
     pendulum_encoder.index_found = false;
@@ -42,13 +61,13 @@ void pendulum_controller_thread_entry() {
     while (motor->axis_legacy.control_loop_up) {
         update_pendulum_position();
 
-        //motor->pos_setpoint = 10000 * dir;
-        //motor->vel_setpoint = 0;
-        //motor->current_setpoint = 0;
-        //motor->control_mode = CTRL_MODE_POSITION_CONTROL;
+        motor->pos_setpoint = 10000 * dir;
+        motor->vel_setpoint = 0;
+        motor->current_setpoint = 0;
+        motor->control_mode = CTRL_MODE_POSITION_CONTROL;
 
-        //dir *= -1;
-        osDelay(1);
+        dir *= -1;
+        osDelay(500);
     }
 
 vTaskDelete(osThreadGetId());

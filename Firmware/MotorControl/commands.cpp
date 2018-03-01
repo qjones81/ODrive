@@ -93,7 +93,7 @@ void motors_1_set_current_setpoint_func(void) {
 // TODO: Autogenerate this table. It will come up again very soon in the Arduino library.
 // clang-format off
 const Endpoint endpoints[] = {
-    Endpoint::make_property("pendulum_angle", &pendulum_encoder.pll_pos),
+    //Endpoint::make_property("pendulum_angle", &pendulum_encoder.pll_pos),
     Endpoint::make_property("vbus_voltage", const_cast<const float*>(&vbus_voltage)),
     Endpoint::make_property("elec_rad_per_enc", const_cast<const float*>(&elec_rad_per_enc)),
 	Endpoint::make_property("UUID_0", (const uint32_t*)(ID_UNIQUE_ADDRESS + 0*4)),
