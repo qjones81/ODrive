@@ -1,25 +1,22 @@
 #ifndef __SCOPE_H
 #define __SCOPE_H
 
-#include <stdint.h>
 #include <vector>
-#include <functional>
-
 #include "CircularBuffer.h"
 
 struct Channel_t;
-  typedef bool (*trigger_callback)(Channel_t *channel_id);
+  typedef bool (*trigger_callback)(void *channel);
 
 class Scope {
    public:
     typedef enum {
         TRIGGER_NONE,    // Triggering not enabled on this channel. Still logged and sampled
-        TRIGGER_ALWAYS, // TODO: Implement (Free Run Logger Mode to circular buffer?)  Probably not needed
+        //TRIGGER_ALWAYS, // TODO: Implement (Free Run Logger Mode to circular buffer?)  Probably not needed
         TRIGGER_EDGE,
         TRIGGER_PULSE,   //TODO: Implement
         TRIGGER_SLOPE,   //TODO: Implement
         TRIGGER_TIMEOUT,  //TODO: Implement
-        TRIGGER_CUSTOM   //TODO: Implement Trigger based on custom callback function
+        TRIGGER_CUSTOM 
     } Trigger_type_t;
 
     typedef enum {
@@ -80,16 +77,33 @@ class Scope {
     // Set/Gets
     void inline set_update_rate(float update_rate) { update_rate_ = update_rate; } // TODO: Reconfigure channel buffer sizes
     float inline get_update_rate() { return update_rate_; }
-    void inline set_sample_time_base(float sample_time_base) { sample_time_base_ = sample_time_base_; } // TODO: Reconfigure channel buffer sizes
+    void inline set_sample_time_base(float sample_time_base) { sample_time_base_ = sample_time_base; } // TODO: Reconfigure channel buffer sizes
     float inline get_sample_time_base() { return sample_time_base_; }
 
     bool get_triggered() { return triggered_;}
-
+    // Add Triggered Callback
     // Python Command Interface Mappings
     struct {
         uint8_t channel_id;
-    } set_channel_source_args;
+    } set_channel_read_source_args;
 
+    struct {
+        uint8_t channel_id;
+        uint32_t index;
+    } set_channel_read_sample_args;
+
+    void GetSampleBufferSize(uint8_t channel_id);
+    void ReadSample(uint8_t channel_id, uint32_t sample_index);
+    float sample_read_value;
+    uint32_t sample_buffer_size;
+    uint32_t trigger_complete;
+    uint32_t is_triggering;
+
+    // TODO: Add "User Signals Map Here:" std::map<string, float *>
+    // "AddSignalMeasurement("Name", float *ptr);"
+    // "AddChannel(Blah Blah)
+    // "ConnectSignal(Channel, Signal Name)""
+    // End Python.  Can this go somewhere else?  Maybe helper libs of some kind. or a "Reader Interface"
     // For now only sample "Triggered" channels then start processing all
    protected: 
 

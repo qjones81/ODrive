@@ -11,6 +11,8 @@ Scope::Scope(float update_rate)
 bool Scope::Start() {    // TODO: Run for time period?
     started_ = true;
     triggered_ = false;
+    trigger_complete = false;
+    is_triggering = false;
 
     // Reset Circular Buffers
     for (uint8_t i = 0; i < channels_.size(); i++) {
@@ -24,6 +26,10 @@ bool Scope::Start() {    // TODO: Run for time period?
 
 void Scope::Stop() {
     started_ = false;
+
+    //  Update Variables for python
+    trigger_complete = true;
+    is_triggering = false;
 }
 void Scope::Reset() {
     // Clear Channels
@@ -36,18 +42,17 @@ void Scope::Reset() {
 }
 
 void Scope::SampleChannels() {
-    if(!started_)
+    if (!started_)
         return;
 
     static uint32_t triggered_sample_count = 0;
     static uint32_t triggered_buffer_size = 0;
 
-// We are setup here for basically a single shot mode. When done goes into Stop condition
+    // We are setup here for basically a single shot mode. When done goes into Stop condition
     if (triggered_ && (triggered_sample_count++ >= triggered_buffer_size)) {
         Stop();
         return;
     }
-
 
     // If triggered sample stream from callback
     for (uint8_t i = 0; i < channels_.size(); i++) {
@@ -57,6 +62,7 @@ void Scope::SampleChannels() {
             // TODO: Give time to settle dwon before processing triggers
             triggered_ = ProcessChannelTriggerStatus(channels_[i]);
             if(triggered_) {
+                is_triggering = true;
                 triggered_sample_count = 0;
                 triggered_buffer_size = sample_time_base_ * 1e-3 * update_rate_;
             }
@@ -71,17 +77,17 @@ void Scope::SampleChannels() {
     return ProcessChannelTriggerStatus(channels_[channel_id]);
 }
 bool Scope::ProcessChannelTriggerStatus(Channel_t *channel) {
-    
+
     // TODO: Also need to set the triggered time also for pre/post
     bool triggered = false;
     ChannelConfig_t config = channel->config;
-    switch(config.trigger_type) {
-        case TRIGGER_ALWAYS: // Trigger on first read
-            triggered = true;
-            break;
+    switch (config.trigger_type) {
         case TRIGGER_NONE:  // No Trigger Here
             triggered = false;
             break;
+       // case TRIGGER_ALWAYS:  // Trigger on first read
+         //   triggered = true;
+           // break;
         case TRIGGER_EDGE:  // Edge Trigger
             triggered = ProcessEdgeTriggerStatus(channel);
             break;
@@ -92,7 +98,7 @@ bool Scope::ProcessChannelTriggerStatus(Channel_t *channel) {
         case TRIGGER_TIMEOUT:  // Timeout Trigger
             break;
         case TRIGGER_CUSTOM:  // Custom Defined Trigger
-          //  triggered = config.signal_trigger_custom(&channel);
+            triggered = config.signal_trigger_custom((void*)channel);
             break;
         default:
             triggered = false;
@@ -171,4 +177,18 @@ CircularBuffer<float> *Scope::GetChannelSampleBuffer(uint8_t channel_id) {
 }
 uint8_t inline Scope::ChannelCount() {
     return channels_.size();
+}
+
+// Python Read Out Function Helpers
+void Scope::GetSampleBufferSize(uint8_t channel_id) {
+    if (channel_id >= channels_.size())  // Make sure in bounds
+        sample_buffer_size = 0;
+
+    sample_buffer_size = channels_[channel_id]->sample_buffer.size();
+}
+void Scope::ReadSample(uint8_t channel_id, uint32_t sample_index) {
+    if (channel_id >= channels_.size())  // Make sure in bounds
+        sample_read_value = 0;
+
+    sample_read_value = channels_[channel_id]->sample_buffer[sample_index];
 }

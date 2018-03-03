@@ -90,14 +90,21 @@ void motors_1_set_current_setpoint_func(void) {
         motors[1].set_current_setpoint_args.current_setpoint);
 }
 
-void scope_set_channel_read_source_func(void) {
-    
+void scope_read_sample_func(void) {
+    // Setup get length.  Set index etx
+    scope.ReadSample(scope.set_channel_read_sample_args.channel_id, scope.set_channel_read_sample_args.index);
+}
+void scope_get_sample_buffer_size_func(void) {
+    scope.GetSampleBufferSize(scope.set_channel_read_source_args.channel_id);
 }
 void scope_start_func(void) {
     scope.Start();
 }
 void scope_stop_func(void) {
     scope.Stop();
+}
+void scope_reset_func(void) {
+    scope.Reset();
 }
 // This table specifies which fields and functions are exposed on the USB and UART ports.
 // TODO: Autogenerate this table. It will come up again very soon in the Arduino library.
@@ -117,9 +124,17 @@ const Endpoint endpoints[] = {
         Endpoint::make_function("stop", &scope_stop_func),
         // No parameters, but still requires a close_tree()
         Endpoint::close_tree(),
-        Endpoint::make_function("init_channel_read", &scope_set_channel_read_source_func),
-            Endpoint::make_property("trigger_channel", &scope.set_channel_source_args.channel_id),
+        Endpoint::make_function("read_sample", &scope_read_sample_func),
+            Endpoint::make_property("channel", &scope.set_channel_read_sample_args.channel_id),
+            Endpoint::make_property("index", &scope.set_channel_read_sample_args.index),
         Endpoint::close_tree(),
+        Endpoint::make_function("read_sample_buffer_size", &scope_get_sample_buffer_size_func),
+            Endpoint::make_property("channel", &scope.set_channel_read_source_args.channel_id),
+        Endpoint::close_tree(),
+        Endpoint::make_property("sample_value", &scope.sample_read_value),
+        Endpoint::make_property("sample_buffer_size", &scope.sample_buffer_size),
+        Endpoint::make_property("trigger_complete", &scope.trigger_complete),
+        Endpoint::make_property("is_triggering", &scope.is_triggering),
         //         Endpoint::make_function("set_sampling_params", &scope_set_sampling_func),
         //     Endpoint::make_property("sample_rate", &scope.set_sampling_params_args.sample_rate),
         //     Endpoint::make_property("sample_time", &scope.set_sampling_params_args.sample_time),
@@ -134,12 +149,6 @@ const Endpoint endpoints[] = {
         //       Endpoint::make_function("disconnect_channel", &scope_disconnect_channel_func),
         //     Endpoint::make_property("scope_channel", &scope.disconnect_channel_args.scope_channel),
         // Endpoint::close_tree(),
-        // Endpoint::make_function("get_sample", &scope_channel_sample_read_func),
-        //     Endpoint::make_property("trigger_channel", &scope.get_sample_args.trigger_channel),
-        //     Endpoint::make_property("offset", &scope.get_sample_args.offset),
-        // Endpoint::close_tree(),
-        // Endpoint::make_property("read_sample_buffer", &scope.sample_read_buffer),
-        // Endpoint::make_property("sample_buffer_size", &scope.sample_buffer_size),
     Endpoint::close_tree(),
     // Endpoint::make_object("cart_pendulum"),
     //     Endpoint::make_function("set_pos_setpoint", &motors_0_set_pos_setpoint_func),

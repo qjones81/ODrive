@@ -18,4 +18,4 @@ print("Cart Position (m): " + str(my_drive.cart_position))
 while True:
     print("Penulum Angle: " + str(my_drive.pendulum_angle))
     print("Cart Position (m): " + str(my_drive.cart_position))
-    time.sleep(0.5)
+    time.sleep(0.01)
