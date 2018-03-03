@@ -85,6 +85,8 @@ int SVM(float alpha, float beta, float* tA, float* tB, float* tC);
 
 //beware of inserting large angles!
 float wrap_pm_pi(float theta);
+float wrap_pm_2pi(float theta);
+
 float fast_atan2(float y, float x);
 int mod(int dividend, int divisor);
 

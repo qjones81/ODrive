@@ -86,8 +86,9 @@ CPP_SOURCES = \
   MotorControl/axis.cpp \
   MotorControl/commands.cpp \
   MotorControl/protocol.cpp \
+  MotorControl/Scope.cpp \
   PendulumControl/pendulum_controller.cpp \
-  PendulumControl/kalman.cpp
+  PendulumControl/DynamicalSystemModel.cpp
 ASM_SOURCES = \
   startup/startup_stm32f405xx.s
 
@@ -128,7 +129,7 @@ C_INCLUDES += -Ieigen-3.3.4
 # compile gcc flags
 ASFLAGS = -mthumb -mcpu=cortex-m4 -mfpu=fpv4-sp-d16 -mfloat-abi=hard $(AS_DEFS) $(AS_INCLUDES) $(OPT) -Wall -fdata-sections -ffunction-sections
 CFLAGS = -mthumb -mcpu=cortex-m4 -mfpu=fpv4-sp-d16 -mfloat-abi=hard $(C_DEFS) $(C_INCLUDES) $(OPT) -Wall -fdata-sections -ffunction-sections
-CXXFLAGS = -mthumb -mcpu=cortex-m4 -mfpu=fpv4-sp-d16 -mfloat-abi=hard $(C_DEFS) $(C_INCLUDES) $(OPT) -Wall -fdata-sections -ffunction-sections
+CXXFLAGS = -mthumb -mcpu=cortex-m4 -mfpu=fpv4-sp-d16 -mfloat-abi=hard $(C_DEFS) $(C_INCLUDES) $(OPT) -Wall -Wno-int-in-bool-context -fdata-sections -ffunction-sections
 ifeq ($(DEBUG), 1)
 CFLAGS += -g -gdwarf-2
 CXXFLAGS += -g -gdwarf-2

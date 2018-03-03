@@ -54,7 +54,14 @@
 			"numericaldiff": "cpp",
 			"openglsupport": "cpp",
 			"specialfunctions": "cpp",
-			"splines": "cpp"
+			"splines": "cpp",
+			"low_level.h": "c",
+			"tensor": "c",
+			"freertos_vars.h": "c",
+			"tim.h": "c",
+			"drv8301.h": "c",
+			"*.expression": "cpp",
+			"main.h": "c"
 		}
 	}
 }

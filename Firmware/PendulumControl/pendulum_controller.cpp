@@ -1,39 +1,86 @@
 
 #include "pendulum_controller.h"
 #include <stdlib.h>
-#include "low_level.h"
-#include "utils.h"
-#include "kalman.h"
 #include <tim.h>
+#include "DynamicalSystemModel.h"
+#include "low_level.h"
+#include "Scope.h"
+#include "utils.h"
 
 #define PENDULUM_ENCODER_CPR (600 * 4)
+
 static const float counts_per_rad = 2 * M_PI / PENDULUM_ENCODER_CPR;
 
 Encoder_t pendulum_encoder;
+osThreadId control_thread = 0;
+
+int32_t encoder_dir = 1;
+
+uint16_t pulley_teeth;
+float pulley_pitch;
+float pulley_circumference;
+float pulley_radius;
+float Kv;
+float Kt;
+float I_max;
+float m_per_count;
+float counts_per_m;
+
+float x_pos;
+Motor_t* motor;
 void pendulum_controller_thread_entry() {
+
+    // Setup Scope Channel 1
+    Scope::ChannelConfig_t scope_config;
+    scope_config.sample_rate = 1000; // 1Khz
+    scope_config.trigger_level = 10000; // Trigger when crosses over 1000
+    scope_config.trigger_type = Scope::TRIGGER_EDGE;
+    scope_config.slope_type = Scope::EDGE_FALLING;
+    scope_config.signal_source = &pendulum_encoder.pll_pos;
+
+    // Adjust Scope Params
+    scope.set_sample_time_base(2000); // 2 seconds
+    scope.set_update_rate(1000); // 1 khz
+
+    // Do this after setting up scope sampling and update rates.  Need to add a way to reconfigure buffers is these params change
+    scope.AddChannel(scope_config);
+    scope.Start(); // Start sampling!
+
+    // Setup States
+    int n = 3;  // Number of states
+    int m = 2;  // Number of measurements
+    int q = 1;  // Number of control inputes
+
+    Eigen::MatrixXd A(n, n);  // System dynamics matrix
+    Eigen::MatrixXd B(n, q);  // System dynamics matrix
+    Eigen::MatrixXd C(m, n);  // Output matrix
+    Eigen::MatrixXd D(m, q);  // Output matrix
+
+    /*
+  Eigen::MatrixXd Q(n, n); // Process noise covariance
+  Eigen::MatrixXd R(m, m); // Measurement noise covariance
+  Eigen::MatrixXd P(n, n); // Estimate error covariance*/
+
+    motor = &motors[0];
+
+    pulley_teeth = 20;
+    pulley_pitch = 0.002;
+    pulley_circumference = pulley_teeth * pulley_pitch;
+    pulley_radius = pulley_circumference / M_PI / 2;
+    Kv = 500.0f;
+    Kt = 8.27f / Kv;
+    I_max = 30;
+    m_per_count = pulley_circumference / motor->encoder.encoder_cpr;
+    counts_per_m = 1.0f / m_per_count;
 
     // HAL_TIM_Encoder_Start(&htim4, TIM_CHANNEL_ALL);
 
     // Zero Timer
     // pendulum_encoder.encoder_timer->Instance->CNT = 0;
+    x_pos = 0;
 
-float pos_change = pos_setpoint - motor->encoder.pll_pos;
-if(fabs(pos_change) > 100)
-{
-    motor->vel_limit = 10000.0f;
-}
-else 
-{
-    motor->vel_limit = vel_feed_forward;
-}
-if (pos_setpoint < (motor->encoder.pll_pos - 100)) {
-        motor->vel_limit = 10000.0f};
-        else if (pos_setpoint > (motors[0].encoder.encoder_state + 100)) {
-        motor->vel_limit = 10000.0f};
-        else {
-        motor->vel_limit = vel_feed_forward
-        };
-}
+    control_thread = osThreadGetId();
+
     //Setup pendulum encoder
     pendulum_encoder.use_index = false;
     pendulum_encoder.index_found = false;
@@ -50,41 +97,65 @@ if (pos_setpoint < (motor->encoder.pll_pos - 100)) {
     pendulum_encoder.pll_kp = 0.0f;   // [rad/s / rad]
     pendulum_encoder.pll_ki = 0.0f;   // [(rad/s^2) / rad]
 
-    Motor_t* motor = &motors[0];
-    //osDelay(15000);
-    int dir = 1;
     // TODO: Really need to know when it is up up for good
-    while (!motor->axis_legacy.control_loop_up) { // Wait For the Bring Up
+    while (!motor->axis_legacy.control_loop_up) {  // Wait For the Bring Up
         osDelay(500);
     }
+
+    // Set Control Mode to Current
+    // Start Timer
+    HAL_TIM_Base_Start_IT(&htim10);
+
+    //motor->pos_setpoint = counts_per_m * 0.381f;
+    // motor->vel_setpoint = 0;
+    // motor->current_setpoint = 0;
+    //motor->control_mode = CTRL_MODE_POSITION_CONTROL;
 
     while (motor->axis_legacy.control_loop_up) {
+        if (osSignalWait(M_SIGNAL_CONTROL_LOOP_TICK, CONTROL_LOOP_TIMEOUT).status != osEventSignal) {
+            global_fault(ERROR_NO_ERROR);
+            break;
+        }
+
+        //if(!scope.get_triggered())
         update_pendulum_position();
+        
+        // TODO: Move to new thrread or "ControlThreadDoneSignal" to new thread
+        scope.SampleChannels(); // Sample Callback
 
-        motor->pos_setpoint = 10000 * dir;
-        motor->vel_setpoint = 0;
-        motor->current_setpoint = 0;
-        motor->control_mode = CTRL_MODE_POSITION_CONTROL;
+        //motor->pos_setpoint = 10000;
+        // motor->vel_setpoint = 0;
+        // motor->current_setpoint = 0;
+        // motor->control_mode = CTRL_MODE_POSITION_CONTROL;
 
-        dir *= -1;
-        osDelay(500);
+        // dir *= -1;
+        //  osDelay(500);
     }
 
-vTaskDelete(osThreadGetId());
+    // TODO: Kill Motors Here Properly.
+    motor->vel_setpoint = 0;
+    motor->current_setpoint = 0;
+    motor->control_mode = CTRL_MODE_CURRENT_CONTROL;
+
+    vTaskDelete(osThreadGetId());
 }
 
 void update_pendulum_position() {
     // update internal encoder state
     int16_t delta_enc = (int16_t)pendulum_encoder.encoder_timer->Instance->CNT - (int16_t)pendulum_encoder.encoder_state;
     pendulum_encoder.encoder_state += (int32_t)delta_enc;
-    pendulum_encoder.pll_pos = (float)pendulum_encoder.encoder_state * counts_per_rad;
-    // run pll (for now pll is in units of encoder counts)
-    // TODO pll_pos runs out of precision very quickly here! Perhaps decompose into integer and fractional part?
-    // Predict current pos
-    // encoder.pll_pos += current_meas_period * encoder.pll_vel;
-    // // discrete phase detector
-    // float delta_pos = (float)(encoder.encoder_state - (int32_t)floorf(encoder.pll_pos));
-    // // pll feedback
-    // encoder.pll_pos += current_meas_period * encoder.pll_kp * delta_pos;
-    // encoder.pll_vel += current_meas_period * encoder.pll_ki * delta_pos;
+   // pendulum_encoder.pll_pos = wrap_pm_2pi((float)pendulum_encoder.encoder_state * counts_per_rad * encoder_dir);
+    pendulum_encoder.pll_pos = (float)pendulum_encoder.encoder_state * encoder_dir;
+
+    x_pos = motor->encoder.pll_pos * m_per_count;
+}
+
+void control_timer_cb() {
+    osSignalSet(control_thread, M_SIGNAL_CONTROL_LOOP_TICK);
+
+    // static int count = 0;
+    //if(count++ == 1000) {
+    //    pendulum_encoder.pll_pos = HAL_GetTick();
+    //    count = 0;
+    //}
 }

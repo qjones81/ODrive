@@ -141,6 +141,14 @@ float wrap_pm_pi(float theta) {
     return theta;
 }
 
+//beware of inserting large angles!
+float wrap_pm_2pi(float theta) {
+    const static float TWO_PI = 2.0f * M_PI;
+    while (theta >= TWO_PI) theta -= TWO_PI;
+    while (theta < 0) theta += TWO_PI;
+    return theta;
+}
+
 // based on https://math.stackexchange.com/a/1105038/81278
 float fast_atan2(float y, float x) {
     // a := min (|x|, |y|) / max (|x|, |y|)
