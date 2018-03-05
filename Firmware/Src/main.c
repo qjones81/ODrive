@@ -225,6 +225,9 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
   if (htim->Instance == TIM14) {
     HAL_IncTick();
   }
+  else if (htim->Instance == TIM10) {
+      control_timer_cb();
+  }
 /* USER CODE BEGIN Callback 1 */
 
 /* USER CODE END Callback 1 */

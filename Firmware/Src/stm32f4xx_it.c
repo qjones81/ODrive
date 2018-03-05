@@ -235,8 +235,10 @@ void ADC_IRQHandler(void)
 void TIM1_UP_TIM10_IRQHandler(void)
 {
   /* USER CODE BEGIN TIM1_UP_TIM10_IRQn 0 */
-
-control_timer_cb();
+ //  if (htim->Instance == TIM14) {
+ //   HAL_IncTick();
+ // }
+  //control_timer_cb();
 
   //return;
   /* USER CODE END TIM1_UP_TIM10_IRQn 0 */
