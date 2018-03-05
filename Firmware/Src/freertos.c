@@ -152,7 +152,7 @@ void StartDefaultTask(void const * argument)
   // Start motor threads
   osThreadDef(task_motor_0, axis_thread_entry,   osPriorityHigh+1, 0, 512);
   //osThreadDef(task_motor_1, axis_thread_entry,   osPriorityHigh,   0, 512);
-  osThreadDef(task_pendulum_control, pendulum_controller_thread_entry,   osPriorityHigh,   0, 512);
+  osThreadDef(task_pendulum_control, pendulum_controller_thread_entry,   osPriorityNormal,   0, 512);
 
   thread_motor_0 = osThreadCreate(osThread(task_motor_0), &motors[0]);
   thread_pendulum_control = osThreadCreate(osThread(task_pendulum_control), NULL);

@@ -4,6 +4,7 @@
 
 #ifdef __cplusplus
 #include <low_level.h>
+
 extern "C" {
 #endif
 
@@ -20,6 +21,7 @@ typedef enum {
 extern Encoder_t pendulum_encoder;
 extern osThreadId control_thread;
 extern float x_pos;
+
 void pendulum_controller_thread_entry();
 void update_pendulum_position();
 

@@ -1,11 +1,11 @@
 #include "Scope.h"
-
+#include "utils.h"
 
 // Global Scope for nOw
 Scope scope;
-
+std::string test;
 Scope::Scope(float update_rate)
-  : triggered_(false), started_(false), update_rate_(update_rate), sample_time_base_(1000) {
+  : triggered_(false), started_(false), update_rate_(update_rate), sample_time_base_(1000), pretrigger_time_base_(0) {
 }
 
 bool Scope::Start() {    // TODO: Run for time period?
@@ -42,11 +42,17 @@ void Scope::Reset() {
 }
 
 void Scope::SampleChannels() {
-    if (!started_)
-        return;
 
     static uint32_t triggered_sample_count = 0;
     static uint32_t triggered_buffer_size = 0;
+    static uint32_t last_sample_time = 0;
+    //static volatile uint32_t now = 0;
+    //static volatile uint32_t elapsed = 0;
+    //now = micros();
+  //  elapsed = now - last_sample_time;
+    if (!started_) {// || (elapsed <= update_interval_)) {
+        return;
+    }
 
     // We are setup here for basically a single shot mode. When done goes into Stop condition
     if (triggered_ && (triggered_sample_count++ >= triggered_buffer_size)) {
@@ -56,6 +62,7 @@ void Scope::SampleChannels() {
 
     // If triggered sample stream from callback
     for (uint8_t i = 0; i < channels_.size(); i++) {
+        // TODO: Check sample rate vs last sample time...
          channels_[i]->sample_buffer.push_back(*channels_[i]->config.signal_source);  // Sample at full rate.  TODO: decimate data if sample rate is lower
         // If not triggered, process channels for triggering
         if (!triggered_) {  // Evaluate Triggers
@@ -66,8 +73,11 @@ void Scope::SampleChannels() {
                 triggered_sample_count = 0;
                 triggered_buffer_size = sample_time_base_ * 1e-3 * update_rate_;
             }
+            break; // Ignore any additional triggers
         }
     }
+   // last_sample_time = micros();
+
 }
 
  bool Scope::ProcessChannelTriggerStatus(uint8_t channel_id) {
@@ -140,7 +150,7 @@ bool Scope::AddChannel(const ChannelConfig_t &config) {
     channel->last_sample_time = 0;
     // TODO: Make sure sample rate is < scope update rate.  Warn somehow
     // Setup Channel Buffers
-    uint32_t buffer_size = sample_time_base_ * 1e-3 * config.sample_rate + 5; // A bit of padding for the hell of it
+    uint32_t buffer_size = (pretrigger_time_base_ + sample_time_base_) * 1e-3 * config.sample_rate; // Maybe a bit of padding for the hell of it?
     if(!channel->sample_buffer.init(buffer_size))
         return false; // out of memory
 

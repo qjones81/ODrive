@@ -193,15 +193,16 @@ uint32_t timeout_to_deadline(uint32_t timeout_ms) {
     return now_ms + timeout_ms;
 }
 
-// @brief: Returns number of microseconds since system startup
+// @brief: Returns number of microseconds since system startup (12 second maximum before rollover)
 uint32_t micros(void) {
-    uint32_t usTicks = HAL_RCC_GetSysClockFreq() / 1000000;
+    //uint32_t usTicks = HAL_RCC_GetSysClockFreq() / 1000000;
     register uint32_t ms, cycle_cnt;
     do {
         ms = HAL_GetTick();
-        cycle_cnt = SysTick->VAL;
-    } while (ms != HAL_GetTick());
-    return (ms * 1000) + (usTicks * 1000 - cycle_cnt) / usTicks;
+        cycle_cnt = TIM_BASE_TIMER->CNT;
+     } while (ms != HAL_GetTick());
+
+    return (ms * 1000) + cycle_cnt;
 }
 
 // @brief: Busy wait delay for given amount of microseconds (us)

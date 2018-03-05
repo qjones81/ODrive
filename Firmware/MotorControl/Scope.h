@@ -2,6 +2,7 @@
 #define __SCOPE_H
 
 #include <vector>
+#include <string>
 #include "CircularBuffer.h"
 
 struct Channel_t;
@@ -26,7 +27,8 @@ class Scope {
     } Trigger_slope_t;
 
     struct ChannelConfig_t {
-        float sample_rate; // samples/second (Could also go up and be "global" to the scope)
+        float sample_rate; // samples/second per channel
+        float sample_period; // AUTO_SET
         //float memory_depth_time_base;   // ms (How long are sampling for) // (Could also go up and be "global" to the scope)
         float trigger_level; 
 
@@ -51,6 +53,7 @@ class Scope {
         CircularBuffer<float> sample_buffer;     // Need some kind of max buffer size check.  50K for now?  50000 total samples
         //CircularBuffer<float> memory_depth_buffer; // Pre-Trigger Time, Will calculate number of trigger samples to get
         uint32_t last_sample_time; // us
+        uint32_t update_interval_; // Update Period
     } Channel_t;
 
     // TODO: Total Maximum Samples per second?
@@ -75,10 +78,12 @@ class Scope {
     //CircularBuffer<float> *GetChannelMemoryBuffer(uint8_t channel_id);
 
     // Set/Gets
-    void inline set_update_rate(float update_rate) { update_rate_ = update_rate; } // TODO: Reconfigure channel buffer sizes
+    void inline set_update_rate(float update_rate) { update_rate_ = update_rate; update_interval_ = (uint32_t)((1.0f/update_rate) * 1e6f);} // TODO: Reconfigure channel buffer sizes
     float inline get_update_rate() { return update_rate_; }
     void inline set_sample_time_base(float sample_time_base) { sample_time_base_ = sample_time_base; } // TODO: Reconfigure channel buffer sizes
     float inline get_sample_time_base() { return sample_time_base_; }
+    void inline set_pretrigger_time_base(float pretrigger_time_base) { pretrigger_time_base_ = pretrigger_time_base; } // TODO: Reconfigure channel buffer sizes
+    float inline get_pretrigger_time_base() { return pretrigger_time_base_; }
 
     bool get_triggered() { return triggered_;}
     // Add Triggered Callback
@@ -115,12 +120,13 @@ class Scope {
     bool triggered_; // Scope has been triggered by a setup channel input
     bool started_;  // Scope in Run mode
     float update_rate_; // Rate for Sample data update rate.  Channel sampling rates are decimated and downsampled from this
-    float sample_time_base_;  // ms (How long are sampling for)
+    uint32_t update_interval_; // Update Period
 
+    float sample_time_base_;  // ms (How long are sampling for)
+    float pretrigger_time_base_; // ms (How much buffer time)  Should these really be in "num samples"?
     // Sampled Channels
     std::vector<Channel_t *> channels_;
 };
 
 extern Scope scope;
-
 #endif /* __SCOPE_H */

@@ -32,15 +32,16 @@ void pendulum_controller_thread_entry() {
 
     // Setup Scope Channel 1
     Scope::ChannelConfig_t scope_config;
-    scope_config.sample_rate = 100; // 1Khz
-    scope_config.trigger_level = 10000; // Trigger when crosses over 1000
+    scope_config.sample_rate = 1000; // 1Khz
+    scope_config.trigger_level = 10000; // Trigger when crosses over 10000
     scope_config.trigger_type = Scope::TRIGGER_EDGE;
     scope_config.slope_type = Scope::EDGE_RISING;
     scope_config.signal_source = &pendulum_encoder.pll_pos;
 
     // Adjust Scope Params
-    scope.set_sample_time_base(4000); // 2 seconds
-    scope.set_update_rate(100); // 1 khz
+    scope.set_pretrigger_time_base(500);
+    scope.set_sample_time_base(2000); // 2 seconds
+    scope.set_update_rate(1000); // 1 khz
 
     // Do this after setting up scope sampling and update rates.  Need to add a way to reconfigure buffers if these params change
     scope.AddChannel(scope_config);
@@ -49,7 +50,7 @@ void pendulum_controller_thread_entry() {
     // Setup States
     int n = 3;  // Number of states
     int m = 2;  // Number of measurements
-    int q = 1;  // Number of control inputes
+    int q = 1;  // Number of control inputs
 
     Eigen::MatrixXd A(n, n);  // System dynamics matrix
     Eigen::MatrixXd B(n, q);  // System dynamics matrix

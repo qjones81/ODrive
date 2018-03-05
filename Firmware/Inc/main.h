@@ -164,6 +164,7 @@
 #define VBUS_S_DIVIDER_RATIO 11.0f
 #endif
 
+#define TIM_BASE_TIMER TIM14
 /* USER CODE END Private defines */
 
 void _Error_Handler(char *, int);

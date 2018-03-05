@@ -135,6 +135,7 @@ const Endpoint endpoints[] = {
         Endpoint::make_property("sample_buffer_size", &scope.sample_buffer_size),
         Endpoint::make_property("trigger_complete", &scope.trigger_complete),
         Endpoint::make_property("is_triggering", &scope.is_triggering),
+       // Endpoint::make_property("test_string", &test),
         //         Endpoint::make_function("set_sampling_params", &scope_set_sampling_func),
         //     Endpoint::make_property("sample_rate", &scope.set_sampling_params_args.sample_rate),
         //     Endpoint::make_property("sample_time", &scope.set_sampling_params_args.sample_time),
