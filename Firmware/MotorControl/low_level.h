@@ -119,6 +119,7 @@ typedef struct {
     int32_t encoder_offset;
     int32_t encoder_state;
     int32_t motor_dir;  // 1/-1 for fwd/rev alignment to encoder.
+    int32_t encoder_state_wrapped;
     float phase;
     float pll_pos;
     float pll_vel;

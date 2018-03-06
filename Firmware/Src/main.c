@@ -9,7 +9,7 @@
   * inserted by the user or by software development tools
   * are owned by their respective copyright owners.
   *
-  * Copyright (c) 2017 STMicroelectronics International N.V. 
+  * Copyright (c) 2018 STMicroelectronics International N.V. 
   * All rights reserved.
   *
   * Redistribution and use in source and binary forms, with or without 
@@ -45,6 +45,7 @@
   *
   ******************************************************************************
   */
+
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "stm32f4xx_hal.h"
@@ -113,13 +114,13 @@ int main(void)
   MX_CAN1_Init();
   MX_TIM1_Init();
   MX_TIM8_Init();
-  MX_TIM10_Init();
   MX_TIM3_Init();
   MX_TIM4_Init();
   MX_SPI3_Init();
   MX_ADC3_Init();
   MX_TIM2_Init();
   MX_UART4_Init();
+  MX_TIM10_Init();
 
   /* USER CODE BEGIN 2 */
 
@@ -225,8 +226,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
   if (htim->Instance == TIM14) {
     HAL_IncTick();
   }
-  else if (htim->Instance == TIM10) {
-      control_timer_cb();
+  else if(htim->Instance == TIM10) {
+    control_timer_cb();
   }
 /* USER CODE BEGIN Callback 1 */
 

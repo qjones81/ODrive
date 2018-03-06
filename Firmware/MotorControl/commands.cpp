@@ -91,11 +91,17 @@ void motors_1_set_current_setpoint_func(void) {
 }
 
 void scope_read_sample_func(void) {
-    // Setup get length.  Set index etx
+    // Setup get length.  Set index etc
     scope.ReadSample(scope.set_channel_read_sample_args.channel_id, scope.set_channel_read_sample_args.index);
 }
 void scope_get_sample_buffer_size_func(void) {
     scope.GetSampleBufferSize(scope.set_channel_read_source_args.channel_id);
+}
+void scope_get_sample_decimation_func(void) {
+    scope.GetChannelSampleDecimation(scope.set_channel_read_source_args.channel_id);
+}
+void scope_get_trigger_offset_func(void) {
+    scope.GetChannelTriggerOffset(scope.set_channel_read_source_args.channel_id);
 }
 void scope_start_func(void) {
     scope.Start();
@@ -131,8 +137,17 @@ const Endpoint endpoints[] = {
         Endpoint::make_function("read_sample_buffer_size", &scope_get_sample_buffer_size_func),
             Endpoint::make_property("channel", &scope.set_channel_read_source_args.channel_id),
         Endpoint::close_tree(),
+        Endpoint::make_function("read_sample_decimation", &scope_get_sample_decimation_func),
+            Endpoint::make_property("channel", &scope.set_channel_read_source_args.channel_id),
+        Endpoint::close_tree(),
+        Endpoint::make_function("read_trigger_offset", &scope_get_trigger_offset_func),
+            Endpoint::make_property("channel", &scope.set_channel_read_source_args.channel_id),
+        Endpoint::close_tree(),
+
         Endpoint::make_property("sample_value", &scope.sample_read_value),
         Endpoint::make_property("sample_buffer_size", &scope.sample_buffer_size),
+        Endpoint::make_property("sample_decimation", &scope.sample_decimation),
+        Endpoint::make_property("trigger_offset", &scope.trigger_offset),
         Endpoint::make_property("trigger_complete", &scope.trigger_complete),
         Endpoint::make_property("is_triggering", &scope.is_triggering),
        // Endpoint::make_property("test_string", &test),

@@ -97,6 +97,8 @@ uint32_t micros(void);
 
 void delay_us(uint32_t us);
 
+void debug_pulse(uint32_t length);
+
 #ifdef __cplusplus
 }
 #endif

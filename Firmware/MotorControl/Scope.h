@@ -27,13 +27,10 @@ class Scope {
     } Trigger_slope_t;
 
     struct ChannelConfig_t {
-        float sample_rate; // samples/second per channel
-        float sample_period; // AUTO_SET
-        //float memory_depth_time_base;   // ms (How long are sampling for) // (Could also go up and be "global" to the scope)
+        uint8_t sample_decimation; // collect data every 'nth' data point = to decimation.
         float trigger_level; 
 
-        //uint32_t memory_depth; // For Pretrigger (Could also go up and be "global" to the scope)
-
+        Trigger_type_t trigger_type;
         Trigger_slope_t slope_type;  // set for timeout or edge
         union {
             float trigger_pulse_width;
@@ -41,19 +38,19 @@ class Scope {
             float trigger_timeout;
         } settings;
 
+        // Custom Trigger Callback
+        trigger_callback signal_trigger_custom;
+
         // Also for functions?
         float *signal_source; // Source Variable
-        trigger_callback signal_trigger_custom;
-        Trigger_type_t trigger_type;
     };
 
     // TODO: Floats only for now.  Anything else can just be converted to this
     typedef struct  {
         ChannelConfig_t config;
         CircularBuffer<float> sample_buffer;     // Need some kind of max buffer size check.  50K for now?  50000 total samples
-        //CircularBuffer<float> memory_depth_buffer; // Pre-Trigger Time, Will calculate number of trigger samples to get
-        uint32_t last_sample_time; // us
-        uint32_t update_interval_; // Update Period
+        uint8_t decimation_count;
+        uint32_t trigger_offset;
     } Channel_t;
 
     // TODO: Total Maximum Samples per second?
@@ -75,10 +72,9 @@ class Scope {
     void RemoveChannel(uint8_t channel_id); // Zero Indexed
     uint8_t inline ChannelCount(); // Get Number of active channels
     CircularBuffer<float> *GetChannelSampleBuffer(uint8_t channel_id);
-    //CircularBuffer<float> *GetChannelMemoryBuffer(uint8_t channel_id);
 
     // Set/Gets
-    void inline set_update_rate(float update_rate) { update_rate_ = update_rate; update_interval_ = (uint32_t)((1.0f/update_rate) * 1e6f);} // TODO: Reconfigure channel buffer sizes
+    void inline set_update_rate(float update_rate) { update_rate_ = update_rate; } // TODO: Reconfigure channel buffer sizes
     float inline get_update_rate() { return update_rate_; }
     void inline set_sample_time_base(float sample_time_base) { sample_time_base_ = sample_time_base; } // TODO: Reconfigure channel buffer sizes
     float inline get_sample_time_base() { return sample_time_base_; }
@@ -87,6 +83,7 @@ class Scope {
 
     bool get_triggered() { return triggered_;}
     // Add Triggered Callback
+
     // Python Command Interface Mappings
     struct {
         uint8_t channel_id;
@@ -98,19 +95,26 @@ class Scope {
     } set_channel_read_sample_args;
 
     void GetSampleBufferSize(uint8_t channel_id);
+    void GetChannelSampleDecimation(uint8_t channel_id);
+    void GetChannelTriggerOffset(uint8_t channel_id);
     void ReadSample(uint8_t channel_id, uint32_t sample_index);
     float sample_read_value;
     uint32_t sample_buffer_size;
+    uint32_t sample_decimation;
+    uint32_t trigger_offset;
     uint32_t trigger_complete;
     uint32_t is_triggering;
+
 
     // TODO: Add "User Signals Map Here:" std::map<string, float *>
     // "AddSignalMeasurement("Name", float *ptr);"
     // "AddChannel(Blah Blah)
     // "ConnectSignal(Channel, Signal Name)""
+
     // End Python.  Can this go somewhere else?  Maybe helper libs of some kind. or a "Reader Interface"
     // For now only sample "Triggered" channels then start processing all
-   protected: 
+
+   private: 
 
     // Look for any setup triggers that have setup
     bool ProcessChannelTriggerStatus(Channel_t *channel);
@@ -119,11 +123,12 @@ class Scope {
     bool ProcessEdgeTriggerStatus(Channel_t *channel);
     bool triggered_; // Scope has been triggered by a setup channel input
     bool started_;  // Scope in Run mode
-    float update_rate_; // Rate for Sample data update rate.  Channel sampling rates are decimated and downsampled from this
-    uint32_t update_interval_; // Update Period
+    float update_rate_; // Rate for Sample data update rate.  Channel sampling rates are decimated and downsampled from this    
+    // TODO: Decimation on main scope?  I think this should be timer adjusted.
 
     float sample_time_base_;  // ms (How long are sampling for)
     float pretrigger_time_base_; // ms (How much buffer time)  Should these really be in "num samples"?
+
     // Sampled Channels
     std::vector<Channel_t *> channels_;
 };

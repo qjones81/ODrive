@@ -206,10 +206,17 @@ uint32_t micros(void) {
 }
 
 // @brief: Busy wait delay for given amount of microseconds (us)
-void delay_us(uint32_t us)
-{
+void delay_us(uint32_t us) {
     uint32_t start = micros();
     while (micros() - start < (uint32_t) us) {
         __ASM("nop");
     }
+}
+
+void debug_pulse(uint32_t length) {
+  //  HAL_GPIO_WritePin(GPIO_5_GPIO_Port, GPIO_5_Pin, GPIO_PIN_SET);
+    GPIO_5_GPIO_Port -> ODR |= GPIO_5_Pin;
+    delay_us(50);
+    GPIO_5_GPIO_Port -> ODR &= ~GPIO_5_Pin;
+  //  HAL_GPIO_WritePin(GPIO_5_GPIO_Port, GPIO_5_Pin, GPIO_PIN_RESET);
 }

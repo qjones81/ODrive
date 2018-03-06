@@ -54,13 +54,18 @@ my_drive.scope.read_sample_buffer_size(channel_1)
 buffer_size = my_drive.scope.sample_buffer_size
 print("Buffer Size: " + str(buffer_size))
 
+my_drive.scope.read_trigger_offset(channel_1)
+trigger_offset = my_drive.scope.trigger_offset
+print("Trigger Offset: " + str(trigger_offset))
+
+
 # Read back samples
 index = 0
 vals = []
 while (index < buffer_size):
     my_drive.scope.read_sample(channel_1, index)
     sample_value = my_drive.scope.sample_value
-  #  print("Sample: " + str(sample_value))
+    #print("Sample: " + str(sample_value))
     vals.append(sample_value)
     index = index + 1
 # Live plot
@@ -72,7 +77,7 @@ while True:
     # for series in vals:
     #     plt.plot(series)
     plt.plot(vals)
-    plt.pause(1)
+    plt.pause(100)
 
 # time.sleep(10)
 

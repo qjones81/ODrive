@@ -17,6 +17,7 @@ bool Scope::Start() {    // TODO: Run for time period?
     // Reset Circular Buffers
     for (uint8_t i = 0; i < channels_.size(); i++) {
         channels_[i]->sample_buffer.clear();
+        channels_[i]->trigger_offset = channels_[i]->sample_buffer.capacity();
     }
 
     // Sanity checks here.  Make sure memory is allocated, update rates are consistent and valid with sample rates, etc
@@ -44,26 +45,33 @@ void Scope::Reset() {
 void Scope::SampleChannels() {
 
     static uint32_t triggered_sample_count = 0;
-    static uint32_t triggered_buffer_size = 0;
-    static uint32_t last_sample_time = 0;
+    static uint32_t triggered_sample_size = 0;
+    //static uint32_t last_sample_time = 0;
+    //static uint32_t decimation_counter = 1;
     //static volatile uint32_t now = 0;
     //static volatile uint32_t elapsed = 0;
     //now = micros();
-  //  elapsed = now - last_sample_time;
-    if (!started_) {// || (elapsed <= update_interval_)) {
+    //elapsed = now - last_sample_time;
+    if (!started_)
         return;
-    }
+
+
 
     // We are setup here for basically a single shot mode. When done goes into Stop condition
-    if (triggered_ && (triggered_sample_count++ >= triggered_buffer_size)) {
+    if (triggered_ && (triggered_sample_count++ >= triggered_sample_size)) {
         Stop();
         return;
     }
 
     // If triggered sample stream from callback
     for (uint8_t i = 0; i < channels_.size(); i++) {
-        // TODO: Check sample rate vs last sample time...
-         channels_[i]->sample_buffer.push_back(*channels_[i]->config.signal_source);  // Sample at full rate.  TODO: decimate data if sample rate is lower
+        Channel_t *channel = channels_[i];
+        if(channel->decimation_count++ < channel->config.sample_decimation)
+            continue;
+
+        debug_pulse(50);
+
+        channel->sample_buffer.push_back(*channel->config.signal_source);  // Sample at full rate.  TODO: decimate data if sample rate is lower
         // If not triggered, process channels for triggering
         if (!triggered_) {  // Evaluate Triggers
             // TODO: Give time to settle dwon before processing triggers
@@ -71,12 +79,14 @@ void Scope::SampleChannels() {
             if(triggered_) {
                 is_triggering = true;
                 triggered_sample_count = 0;
-                triggered_buffer_size = sample_time_base_ * 1e-3 * update_rate_;
+                triggered_sample_size = sample_time_base_ * 1e-3 * update_rate_;
             }
-            break; // Ignore any additional triggers
         }
+        else { // Triggering.  Update offset.  Decrement to backtrack the circular buffer to get to the beginning of the trigger time
+            channel->trigger_offset--;
+        }
+        channel->decimation_count = 1; // Reset decimation counter
     }
-   // last_sample_time = micros();
 
 }
 
@@ -147,15 +157,13 @@ bool Scope::AddChannel(const ChannelConfig_t &config) {
     // Copy Configs
     Channel_t *channel = new Channel_t;
     channel->config = config;
-    channel->last_sample_time = 0;
+    channel->decimation_count = 1;
+
     // TODO: Make sure sample rate is < scope update rate.  Warn somehow
     // Setup Channel Buffers
-    uint32_t buffer_size = (pretrigger_time_base_ + sample_time_base_) * 1e-3 * config.sample_rate; // Maybe a bit of padding for the hell of it?
+    uint32_t buffer_size = (pretrigger_time_base_ + sample_time_base_) * 1e-3 * (update_rate_/channel->config.sample_decimation); // Maybe a bit of padding for the hell of it?
     if(!channel->sample_buffer.init(buffer_size))
         return false; // out of memory
-
-    //if(!channel.memory_depth_buffer.init(config.memory_depth))
-     //   return false;
 
     channels_.push_back(channel);
     return true;
@@ -190,11 +198,24 @@ uint8_t inline Scope::ChannelCount() {
 }
 
 // Python Read Out Function Helpers
+
 void Scope::GetSampleBufferSize(uint8_t channel_id) {
     if (channel_id >= channels_.size())  // Make sure in bounds
         sample_buffer_size = 0;
 
     sample_buffer_size = channels_[channel_id]->sample_buffer.size();
+}
+void Scope::GetChannelSampleDecimation(uint8_t channel_id) {
+    if (channel_id >= channels_.size())  // Make sure in bounds
+        sample_buffer_size = 0;
+
+    sample_decimation = channels_[channel_id]->config.sample_decimation;
+}
+void Scope::GetChannelTriggerOffset(uint8_t channel_id) {
+    if (channel_id >= channels_.size())  // Make sure in bounds
+        sample_buffer_size = 0;
+
+    trigger_offset = channels_[channel_id]->trigger_offset;
 }
 void Scope::ReadSample(uint8_t channel_id, uint32_t sample_index) {
     if (channel_id >= channels_.size())  // Make sure in bounds

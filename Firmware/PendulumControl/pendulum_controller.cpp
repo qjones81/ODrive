@@ -32,15 +32,15 @@ void pendulum_controller_thread_entry() {
 
     // Setup Scope Channel 1
     Scope::ChannelConfig_t scope_config;
-    scope_config.sample_rate = 1000; // 1Khz
-    scope_config.trigger_level = 10000; // Trigger when crosses over 10000
+    scope_config.sample_decimation = 1;
+    scope_config.trigger_level = M_PI / 2; // Trigger when crosses over 10000
     scope_config.trigger_type = Scope::TRIGGER_EDGE;
     scope_config.slope_type = Scope::EDGE_RISING;
     scope_config.signal_source = &pendulum_encoder.pll_pos;
 
     // Adjust Scope Params
-    scope.set_pretrigger_time_base(500);
-    scope.set_sample_time_base(2000); // 2 seconds
+    scope.set_pretrigger_time_base(0);
+    scope.set_sample_time_base(10000); // 2 seconds
     scope.set_update_rate(1000); // 1 khz
 
     // Do this after setting up scope sampling and update rates.  Need to add a way to reconfigure buffers if these params change
@@ -91,6 +91,7 @@ void pendulum_controller_thread_entry() {
     pendulum_encoder.encoder_cpr = PENDULUM_ENCODER_CPR;
     pendulum_encoder.encoder_offset = 0;
     pendulum_encoder.encoder_state = 0;
+    pendulum_encoder.encoder_state_wrapped = 0;
     pendulum_encoder.motor_dir = 1;   // 1 or -1
     pendulum_encoder.phase = 0.0f;    // [rad]
     pendulum_encoder.pll_pos = 0.0f;  // [rad]
@@ -118,6 +119,12 @@ void pendulum_controller_thread_entry() {
             break;
         }
 
+
+        
+
+
+
+
         //if(!scope.get_triggered())
         update_pendulum_position();
         
@@ -142,11 +149,15 @@ void pendulum_controller_thread_entry() {
 }
 
 void update_pendulum_position() {
+
+
     // update internal encoder state
     int16_t delta_enc = (int16_t)pendulum_encoder.encoder_timer->Instance->CNT - (int16_t)pendulum_encoder.encoder_state;
     pendulum_encoder.encoder_state += (int32_t)delta_enc;
-   // pendulum_encoder.pll_pos = wrap_pm_2pi((float)pendulum_encoder.encoder_state * counts_per_rad * encoder_dir);
-    pendulum_encoder.pll_pos = (float)pendulum_encoder.encoder_state * encoder_dir;
+    pendulum_encoder.encoder_state_wrapped  += (int32_t)delta_enc;
+    pendulum_encoder.encoder_state_wrapped = pendulum_encoder.encoder_state_wrapped % pendulum_encoder.encoder_cpr;
+    pendulum_encoder.pll_pos = (float)(pendulum_encoder.encoder_state_wrapped * counts_per_rad * encoder_dir) ;//wrap_pm_pi((float)pendulum_encoder.encoder_state_wrapped * counts_per_rad * encoder_dir);
+   // pendulum_encoder.pll_pos = (float)pendulum_encoder.encoder_state * encoder_dir;
 
     x_pos = motor->encoder.pll_pos * m_per_count;
 }
